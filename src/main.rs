@@ -1,16 +1,18 @@
-use mini_redis::{client, Result};
+use mini_redis::client;
 
 #[tokio::main]
-async fn main() -> Result<()>{
-    // Open a connection to the mini-redis address.
-    let mut client = client::connect("127.0.0.1:6379").await?;
+async fn main() {
+    // Establish a connection to the server
+    let mut client = client::connect("127.0.0.1:6379").await.unwrap();
 
-    // Set the key "hello" with value "world"
-    client.set("hello", "world".into()).await?;
+    let t1 = tokio::spawn(async {
+        let res = client.get("hello").await;
+    });
 
-    // Get key "hello"
-    let result = client.get("hello").await?;
-    println!("got value from the server; result = {:?}", result);
+    let t2 = tokio::spawn(async {
+        client.set("foo", "bar".into()).await;
+    });
 
-    Ok(())
+    t1.await.unwrap();
+    t2.await.unwrap();
 }
